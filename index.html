@@ -19,9 +19,26 @@
     body.dark .container{background:#2a2a2a;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
     h2{text-align:center;margin-top:0;}
     .language-select{text-align:right;margin-bottom:15px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+    
     details{margin:15px 0;border-radius:12px;padding:12px;background:#f9fafc;box-shadow:0 2px 8px rgba(0,0,0,0.08); transition: background 0.4s;}
     body.dark details{background:#333;color:#fff;}
-    details summary{font-weight:600;font-size:16px;cursor:pointer;outline:none;}
+    
+    details summary {
+      font-weight:600;font-size:16px;cursor:pointer;outline:none;
+      list-style: none; display: flex; align-items: center;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    
+    details summary::before {
+      content: "→ ";
+      margin-right: 10px;
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    details[open] summary::before {
+      content: "↓ ";
+    }
+
     .input-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center;}
     .input-row input,.input-row select{flex:1;padding:10px 12px;border:1px solid #ccd6dd;border-radius:10px;font-size:14px;background:#fff;}
     body.dark .input-row input,body.dark .input-row select{background:#444;color:#fff;border-color:#666;}
@@ -82,12 +99,12 @@
     <details> 
       <summary id="labelLabor">ค่าแรง &amp; ค่าใช้จ่าย</summary> 
       <div class="input-row"> 
-        <input type="number" inputmode="decimal" id="workers" placeholder="จำนวนคน" oninput="calculate()"> 
-        <input type="number" inputmode="decimal" id="wage" placeholder="ค่าแรง → คน" oninput="calculate()"> 
+        <input type="text" id="workers" placeholder="จำนวนคน" oninput="calculate()"> 
+        <input type="text" id="wage" placeholder="ค่าแรง คน" oninput="calculate()"> 
       </div> 
       <div class="input-row"> 
-        <input type="number" inputmode="decimal" id="water" placeholder="ค่าน้ำ" oninput="calculate()"> 
-        <input type="number" inputmode="decimal" id="electricity" placeholder="ค่าไฟ" oninput="calculate()"> 
+        <input type="text" id="water" placeholder="ค่าน้ำ" oninput="calculate()"> 
+        <input type="text" id="electricity" placeholder="ค่าไฟ" oninput="calculate()"> 
       </div> 
     </details> 
 
@@ -99,7 +116,7 @@
     <div id="result"></div> 
   </div> 
 
-  <div id="versionPanel">v2.2.4</div> 
+  <div id="versionPanel">v2.2.5</div> 
 
   <div id="tutorialOverlay" onclick="handleOverlayClick(event)">
     <div id="tutorialBox">
@@ -120,27 +137,34 @@
     const texts = {
       th: {
         title: "เว็ป/แอปคำนวณต้นทุน", materials: "วัตถุดิบ", laborSection: "ค่าแรง & ค่าใช้จ่าย",
-        workers: "จำนวนคน", wage: "ค่าแรง → คน", water: "ค่าน้ำ", electricity: "ค่าไฟ",
-        matName: "ชื่อวัตถุดิบ", matQty: "จำนวน", matCost: "ราคา → หน่วย", matProfit: "กำไร → หน่วย",
+        workers: "จำนวนคน", wage: "ค่าแรง คน", water: "ค่าน้ำ", electricity: "ค่าไฟ",
+        matName: "ชื่อวัตถุดิบ", matQty: "จำนวน", matCost: "ราคา หน่วย", matProfit: "กำไร หน่วย",
         addMaterial: "+ เพิ่มวัตถุดิบ", deleteBtn: "ลบ", labor: "ค่าแรงรวม", other: "ค่าน้ำ + ค่าไฟ",
-        material: "วัตถุดิบรวม", total: "ต้นทุนรวม ↓", profitText: "กำไรรวม (+)", sale: "ราคาขาย → สรุป",
+        material: "วัตถุดิบรวม", total: "↓ ต้นทุนรวม", profitText: "กำไรรวม (+)", sale: "ราคาขาย สรุป",
         calc: "คำนวณ ↓", reset: "รีเซ็ต", darkMode: "โหมดมืด", lightMode: "โหมดสว่าง", autoMode: "ตามระบบ",
         symbol: "฿", symbolBefore: false, empty: "กรุณาใส่ข้อมูลเพื่อคำนวณ",
         vidErr: "ไม่พบไฟล์วิดีโอคู่มือ"
       },
       en: {
         title: "Cost Calculator", materials: "Materials", laborSection: "Labor & Expenses",
-        workers: "Workers", wage: "Wage → person", water: "Water bill", electricity: "Electricity bill",
-        matName: "Name", matQty: "Qty", matCost: "Cost → Unit", matProfit: "Profit → Unit",
-        addMaterial: "+ Add material", deleteBtn: "Del", labor: "Labor Cost", other: "Water + Elec",
-        material: "Materials", total: "Total Cost ↓", profitText: "Profit (+)", sale: "Final Sale Price",
+        workers: "Workers", wage: "Wage person", water: "Water bill", electricity: "Electricity bill",
+        matName: "Name", matQty: "Qty", matCost: "Cost Unit", matProfit: "Profit Unit",
+        addMaterial: "+ Add material", deleteBtn: "Del", labor: "Total Labor", other: "Water + Elec",
+        material: "Total Materials", total: "↓ Total Cost", profitText: "Total Profit (+)", sale: "Final Sale Price",
         calc: "Calculate ↓", reset: "Reset", darkMode: "Dark Mode", lightMode: "Light Mode", autoMode: "Auto",
         symbol: "$", symbolBefore: true, empty: "Please enter data",
         vidErr: "Video not found"
       }
     };
 
-    // --- ENHANCED THEME LOGIC (SET & SAVE) ---
+    // ฟังก์ชันสำหรับดึงเฉพาะตัวเลขออกมาจากข้อความ (Smart Extract)
+    function parseSmartFloat(val) {
+      if (!val) return 0;
+      // ลบทุกอย่างที่ไม่ใช่ตัวเลข และจุดทศนิยม
+      const cleaned = val.toString().replace(/[^0-9.]/g, '');
+      return parseFloat(cleaned) || 0;
+    }
+
     function applyTheme() {
       const savedTheme = localStorage.getItem("theme") || "auto";
       const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -170,11 +194,6 @@
       applyTheme();
     }
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if ((localStorage.getItem("theme") || "auto") === "auto") applyTheme();
-    });
-
-    // --- CORE LOGIC ---
     function formatMoney(amount) {
       const lang = document.getElementById("langSelect").value;
       const t = texts[lang];
@@ -216,9 +235,9 @@
       div.id = "material-" + materialCount;
       div.innerHTML = `
         <input type="text" placeholder="${t.matName}" value="${name}" style="flex:2" oninput="saveData()">
-        <input type="text" inputmode="decimal" placeholder="${t.matQty}" value="${qty}" oninput="calculate()">
-        <input type="number" inputmode="decimal" placeholder="${t.matCost}" value="${cost}" oninput="calculate()">
-        <input type="number" inputmode="decimal" placeholder="${t.matProfit}" value="${profit}" oninput="calculate()">
+        <input type="text" placeholder="${t.matQty}" value="${qty}" oninput="calculate()">
+        <input type="text" placeholder="${t.matCost}" value="${cost}" oninput="calculate()">
+        <input type="text" placeholder="${t.matProfit}" value="${profit}" oninput="calculate()">
         <button class="delete" onclick="deleteMaterial(${materialCount})">${t.deleteBtn}</button>
       `;
       document.getElementById("materials").appendChild(div);
@@ -234,16 +253,18 @@
     function calculate() {
       const lang = document.getElementById("langSelect").value;
       const t = texts[lang];
-      const workers = parseFloat(document.getElementById("workers").value) || 0;
-      const wage = parseFloat(document.getElementById("wage").value) || 0;
-      const water = parseFloat(document.getElementById("water").value) || 0;
-      const electricity = parseFloat(document.getElementById("electricity").value) || 0;
+      
+      const workers = parseSmartFloat(document.getElementById("workers").value);
+      const wage = parseSmartFloat(document.getElementById("wage").value);
+      const water = parseSmartFloat(document.getElementById("water").value);
+      const electricity = parseSmartFloat(document.getElementById("electricity").value);
 
       let matCostTotal = 0, profTotal = 0, hasData = false;
       document.querySelectorAll("#materials .input-row").forEach(row => {
-        const qtyVal = parseFloat(row.children[1].value) || (row.children[1].value !== "" ? 1 : 0);
-        const costVal = parseFloat(row.children[2].value) || 0;
-        const profVal = parseFloat(row.children[3].value) || 0;
+        const qtyVal = parseSmartFloat(row.children[1].value) || (row.children[1].value !== "" ? 1 : 0);
+        const costVal = parseSmartFloat(row.children[2].value);
+        const profVal = parseSmartFloat(row.children[3].value);
+        
         if (qtyVal > 0 || costVal > 0 || profVal > 0) hasData = true;
         matCostTotal += qtyVal * costVal;
         profTotal += qtyVal * profVal;
@@ -260,7 +281,7 @@
       if (laborTotal > 0) lines.push(`${t.labor}: <strong>${formatMoney(laborTotal)}</strong>`);
       if (otherTotal > 0) lines.push(`${t.other}: <strong>${formatMoney(otherTotal)}</strong>`);
       if (matCostTotal > 0) lines.push(`${t.material}: <strong>${formatMoney(matCostTotal)}</strong>`);
-      if (totalCost > 0) lines.push(`↓ ${t.total}: <strong>${formatMoney(totalCost)}</strong>`);
+      if (totalCost > 0) lines.push(`${t.total}: <strong>${formatMoney(totalCost)}</strong>`);
       if (profTotal > 0) lines.push(`${t.profitText}: <strong>${formatMoney(profTotal)}</strong>`);
 
       document.getElementById("result").innerHTML = hasData
