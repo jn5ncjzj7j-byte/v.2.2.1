@@ -5,13 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <title id="pageTitle">เว็ป/แอปคำนวณต้นทุน</title> 
 
-  <link rel="manifest" href="manifest.json"> 
-  <link rel="icon" href="icon-192.png" sizes="192x192"> 
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-512.png"> 
-  <meta name="apple-mobile-web-app-capable" content="yes"> 
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
-  <meta name="theme-color" content="#4CAF50"> 
-
   <style>
     /* Base Styles */
     body {font-family:'Segoe UI',sans-serif;margin:0;padding:20px;display:flex;justify-content:center;background:linear-gradient(to bottom right,#f0f4f8,#d9e2ec);color:#000;transition:background 0.4s ease, color 0.4s ease;}
@@ -41,13 +34,10 @@
       width: 30px;
       text-align: center;
       transition: transform 0.2s;
-      /* Fake Bold Technique: พ่นเงา 4 ทิศทางเพื่อให้ดูหนาตึ้บ */
       text-shadow: 1px 0px 0px #4CAF50, -1px 0px 0px #4CAF50, 0px 1px 0px #4CAF50, 0px -1px 0px #4CAF50;
       font-family: Arial, sans-serif;
     }
-    details[open] .arrow-icon {
-      transform: rotate(90deg);
-    }
+    details[open] .arrow-icon { transform: rotate(90deg); }
 
     /* Inputs */
     .input-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center;}
@@ -64,7 +54,7 @@
     #result{margin-top:20px;padding:20px;border-radius:16px;background:#e8f5e9;border:1px solid #a5d6a7;font-weight:500;line-height:1.9; transition: 0.4s;}
     body.dark #result{background:#3a3a3a;border:1px solid #666;color:#fff;}
     
-    /* Floating Version & Tutorial Button */
+    /* Floating Version & Tutorial */
     #versionPanel{position:fixed;bottom:10px;left:10px;padding:6px 10px;background:rgba(0,0,0,0.7);color:#fff;font-size:11px;border-radius:6px;z-index:9999;}
     .tutorial-btn {
       position: absolute; top: 15px; left: 15px; width: 42px; height: 42px; border-radius: 50%;
@@ -78,11 +68,19 @@
       100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
     }
 
-    /* Modal Tutorial */
-    #tutorialOverlay {
-      display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); 
-      z-index:10001; align-items:center; justify-content:center; padding:20px;
+    /* Donate Button Right Down */
+    .donate-btn {
+      position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+      color: #000; font-weight: 800; border-radius: 30px;
+      text-decoration: none; box-shadow: 0 5px 15px rgba(255, 165, 0, 0.4);
+      z-index: 10000; display: flex; align-items: center; gap: 8px;
+      transition: 0.3s; font-size: 14px; border: 2px solid #fff;
     }
+    .donate-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(255, 165, 0, 0.6); }
+
+    /* Modal Tutorial */
+    #tutorialOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10001; align-items:center; justify-content:center; padding:20px; }
     #tutorialBox { background:#fff; width:100%; max-width:600px; border-radius:20px; overflow:hidden; position:relative; }
     body.dark #tutorialBox { background:#2a2a2a; color: white; }
     .close-modal { position:absolute; right:15px; top:10px; cursor:pointer; font-size:24px; z-index:10;}
@@ -132,15 +130,18 @@
     <div id="result"></div> 
   </div> 
 
-  <div id="versionPanel">v2.2.5</div> 
+  <a href="https://your-donate-link.com" target="_blank" class="donate-btn">
+    <span>☕</span> <span id="donateText">Donate</span>
+  </a>
+
+  <div id="versionPanel">V2.2.5</div> 
 
   <div id="tutorialOverlay" onclick="handleOverlayClick(event)">
     <div id="tutorialBox">
       <span class="close-modal" onclick="closeTutorial()">×</span>
-      <div class="video-container" id="vidContainer">
-        <video id="tutorialVideo" controls playsinline preload="metadata">
+      <div class="video-container">
+        <video id="tutorialVideo" controls playsinline>
           <source src="videos/tutorial.mp4" type="video/mp4">
-          <p>เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ</p>
         </video>
       </div>
     </div>
@@ -148,7 +149,6 @@
 
   <script>
     let materialCount = 0;
-
     const texts = {
       th: {
         title: "เว็ป/แอปคำนวณต้นทุน", materials: "วัตถุดิบ", laborSection: "ค่าแรง & ค่าใช้จ่าย",
@@ -157,8 +157,7 @@
         addMaterial: "+ เพิ่มวัตถุดิบ", deleteBtn: "ลบ", labor: "ค่าแรงรวม", other: "ค่าน้ำ + ค่าไฟ",
         material: "วัตถุดิบรวม", total: "↓ ต้นทุนรวม", profitText: "กำไรรวม (+)", sale: "ราคาขาย สรุป",
         calc: "คำนวณ ↓", reset: "รีเซ็ต", darkMode: "โหมดมืด", lightMode: "โหมดสว่าง", autoMode: "ตามระบบ",
-        symbol: "฿", symbolBefore: false, empty: "กรุณาใส่ข้อมูลเพื่อคำนวณ",
-        vidErr: "ไม่พบไฟล์วิดีโอคู่มือ"
+        symbol: "฿", symbolBefore: false, empty: "กรุณาใส่ข้อมูลเพื่อคำนวณ", donate: "สนับสนุน"
       },
       en: {
         title: "Cost Calculator", materials: "Materials", laborSection: "Labor & Expenses",
@@ -167,37 +166,35 @@
         addMaterial: "+ Add material", deleteBtn: "Del", labor: "Total Labor", other: "Water + Elec",
         material: "Total Materials", total: "↓ Total Cost", profitText: "Total Profit (+)", sale: "Final Sale Price",
         calc: "Calculate ↓", reset: "Reset", darkMode: "Dark Mode", lightMode: "Light Mode", autoMode: "Auto",
-        symbol: "$", symbolBefore: true, empty: "Please enter data",
-        vidErr: "Video not found"
+        symbol: "$", symbolBefore: true, empty: "Please enter data", donate: "Donate"
       }
     };
 
-    // ฟังก์ชันดึงตัวเลขออกจากข้อความ
     function parseSmartFloat(val) {
       if (!val) return 0;
       const cleaned = val.toString().replace(/[^0-9.]/g, '');
       return parseFloat(cleaned) || 0;
     }
 
-    // จัดการธีม
+    // ฟังก์ชันเปลี่ยนธีม (Auto Detect No Refresh)
     function applyTheme() {
-      const savedTheme = localStorage.getItem("theme") || "auto";
+      const mode = localStorage.getItem("theme") || "auto";
       const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const lang = document.getElementById("langSelect").value;
       const t = texts[lang];
-      const btn = document.getElementById("themeBtn");
-
-      if (savedTheme === "dark") {
-        document.body.classList.add("dark");
-        btn.textContent = t.darkMode;
-      } else if (savedTheme === "light") {
-        document.body.classList.remove("dark");
-        btn.textContent = t.lightMode;
-      } else {
-        document.body.classList.toggle("dark", isSystemDark);
-        btn.textContent = t.autoMode;
-      }
+      
+      const shouldBeDark = mode === "dark" || (mode === "auto" && isSystemDark);
+      document.body.classList.toggle("dark", shouldBeDark);
+      
+      document.getElementById("themeBtn").textContent = mode === "dark" ? t.darkMode : (mode === "light" ? t.lightMode : t.autoMode);
     }
+
+    // ระบบตรวจจับการเปลี่ยนโหมดมืดของเครื่องทันที
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (localStorage.getItem("theme") === "auto" || !localStorage.getItem("theme")) {
+        applyTheme();
+      }
+    });
 
     function toggleDarkMode() {
       const current = localStorage.getItem("theme") || "auto";
@@ -218,12 +215,12 @@
       const t = texts[lang];
       localStorage.setItem("lang", lang);
       document.getElementById("title").textContent = t.title;
-      document.getElementById("pageTitle").textContent = t.title;
       document.getElementById("labelMaterial").textContent = t.materials;
       document.getElementById("labelLabor").textContent = t.laborSection;
       document.getElementById("addBtn").textContent = t.addMaterial;
       document.getElementById("calcBtn").textContent = t.calc;
       document.getElementById("resetBtn").textContent = t.reset;
+      document.getElementById("donateText").textContent = t.donate;
       document.getElementById("workers").placeholder = t.workers;
       document.getElementById("wage").placeholder = t.wage;
       document.getElementById("water").placeholder = t.water;
@@ -242,8 +239,7 @@
 
     function addMaterial(name="", qty="", cost="", profit="") {
       materialCount++;
-      const lang = document.getElementById("langSelect").value;
-      const t = texts[lang];
+      const t = texts[document.getElementById("langSelect").value];
       const div = document.createElement("div");
       div.className = "input-row";
       div.id = "material-" + materialCount;
@@ -258,11 +254,7 @@
       saveData();
     }
 
-    function deleteMaterial(id) {
-      document.getElementById("material-" + id)?.remove();
-      saveData();
-      calculate();
-    }
+    function deleteMaterial(id) { document.getElementById("material-" + id)?.remove(); saveData(); calculate(); }
 
     function calculate() {
       const lang = document.getElementById("langSelect").value;
@@ -332,8 +324,6 @@
     }
 
     function resetAll() { if (confirm("ลบข้อมูลทั้งหมด? / Clear all?")) { localStorage.removeItem("calcData"); location.reload(); } }
-    
-    // Tutorial Functions
     function openTutorial() { document.getElementById("tutorialOverlay").style.display = "flex"; }
     function closeTutorial() { document.getElementById("tutorialOverlay").style.display = "none"; document.getElementById("tutorialVideo").pause(); }
     function handleOverlayClick(e) { if (e.target.id === "tutorialOverlay") closeTutorial(); }
